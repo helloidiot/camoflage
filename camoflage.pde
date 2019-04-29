@@ -4,6 +4,8 @@ int viewport_w = 600;
 int viewport_h = 600;
 // iphone x = 2436x1125
 
+boolean bMouseTime = true;
+
 // classes
 CamoNoise n;
 GUI gui;
@@ -32,8 +34,10 @@ void draw(){
   background(bg);
 
   if (!recording) {
-    if (mouseX >= 0 && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
-      t = mouseY*1.0/height;
+    if (bMouseTime){
+      if (mouseX >= 0 && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
+        t = mouseX*1.0/width;
+      }
     }
     n.update();
     n.display();
@@ -53,6 +57,9 @@ void keyPressed(){
   if (keyCode == ENTER){
     recordingStart = time;
     recording = true;
+  }
+  if (key == 'm' || key == 'M'){
+    bMouseTime = !bMouseTime;
   }
   if (key == '1'){
     bg = 255;
@@ -135,4 +142,8 @@ void push(){
 void pop(){
   popMatrix();
   popStyle();
+}
+
+void debug(){
+
 }

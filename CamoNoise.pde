@@ -9,16 +9,19 @@ float scale3 = 0.003;
 float radius3 = 0.3;
 float scale4 = 0.004;
 float radius4 = 0.4;
-int numFrames = 200;
+
 int iterator = 0;
 float seed;
 
 int off1;
 float off2;
 
+// anim controls
+int numFrames;
+
 // Moire
 // int szX, szY = 256;
-int spacing = 8;
+int spacing = 12;
 
 // pallette
 // 253	67	84
@@ -53,7 +56,7 @@ class CamoNoise {
     // createCamoRect(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
 
     // Three nice patterns
-    createCamoRect(camo, 0, 0, off1, off2, scale1, radius1, 0, 255);
+    createCamoRect(camo, 0, 0, off1, off2/10, scale1/10, radius1, 0, 255);
     createCamoRect(camo, spacing/2, spacing/2, 2, 0.002, 0.002, 0.2, 255, 255);
     createCamoRect(camo, 0, spacing/2, 3, 0.003, 0.003, 0.4, 0, 255);
 

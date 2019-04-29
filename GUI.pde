@@ -37,11 +37,12 @@ class GUI {
 
   void createSliders(){
     // Frequency
-    cp5.addSlider("scale1").setLabel("scale1").setRange(0.0001,0.0005).setValue(0.0001).setPosition(10,10).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("scale1").setLabel("scale1").setRange(0.01,0.05).setValue(0.0001).setPosition(10,10).setSize(sliderWidth,sliderHeight);
     cp5.addSlider("radius1").setLabel("radius1").setRange(0.01,0.05).setValue(0.01).setPosition(10,30).setSize(sliderWidth,sliderHeight);
     cp5.addSlider("off1").setLabel("off1").setRange(1,9).setValue(1).setPosition(10,50).setSize(sliderWidth,sliderHeight);
-    cp5.addSlider("off2").setLabel("off2").setRange(0.0001,0.0005).setValue(0.0001).setPosition(10,70).setSize(sliderWidth,sliderHeight);
-
+    cp5.addSlider("off2").setLabel("off2").setRange(0.01,0.05).setValue(0.01).setPosition(10,70).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("numFrames").setLabel("numFrames").setRange(24,240).setValue(48).setPosition(10,90).setSize(sliderWidth,sliderHeight);
+    //cp5.addSlider("spacing").setLabel("spacing").setRange(4,64).setValue(16).setNumberOfTickMarks(31).setPosition(10,90).setSize(sliderWidth,sliderHeight);
   }
 
 

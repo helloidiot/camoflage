@@ -14,13 +14,15 @@ import java.io.InputStream;
 import java.io.OutputStream; 
 import java.io.IOException; 
 
-public class camouflage extends PApplet {
+public class camoflage extends PApplet {
 
 
 
 int viewport_w = 600;
 int viewport_h = 600;
 // iphone x = 2436x1125
+
+boolean bMouseTime = true;
 
 // classes
 CamoNoise n;
@@ -50,8 +52,10 @@ public void draw(){
   background(bg);
 
   if (!recording) {
-    if (mouseX >= 0 && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
-      t = mouseY*1.0f/height;
+    if (bMouseTime){
+      if (mouseX >= 0 && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
+        t = mouseX*1.0f/width;
+      }
     }
     n.update();
     n.display();
@@ -71,6 +75,9 @@ public void keyPressed(){
   if (keyCode == ENTER){
     recordingStart = time;
     recording = true;
+  }
+  if (key == 'm' || key == 'M'){
+    bMouseTime = !bMouseTime;
   }
   if (key == '1'){
     bg = 255;
@@ -155,6 +162,10 @@ public void pop(){
   popStyle();
 }
 
+public void debug(){
+
+}
+
 
 // Noise
 float scale1;// = 0.001;
@@ -165,16 +176,19 @@ float scale3 = 0.003f;
 float radius3 = 0.3f;
 float scale4 = 0.004f;
 float radius4 = 0.4f;
-int numFrames = 200;
+
 int iterator = 0;
 float seed;
 
 int off1;
 float off2;
 
+// anim controls
+int numFrames;
+
 // Moire
 // int szX, szY = 256;
-int spacing = 8;
+int spacing = 12;
 
 // pallette
 // 253	67	84
@@ -209,7 +223,7 @@ class CamoNoise {
     // createCamoRect(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
 
     // Three nice patterns
-    createCamoRect(camo, 0, 0, off1, off2, scale1, radius1, 0, 255);
+    createCamoRect(camo, 0, 0, off1, off2/10, scale1/10, radius1, 0, 255);
     createCamoRect(camo, spacing/2, spacing/2, 2, 0.002f, 0.002f, 0.2f, 255, 255);
     createCamoRect(camo, 0, spacing/2, 3, 0.003f, 0.003f, 0.4f, 0, 255);
 
@@ -329,17 +343,18 @@ class GUI {
 
   public void createSliders(){
     // Frequency
-    cp5.addSlider("scale1").setLabel("scale1").setRange(0.0001f,0.0005f).setValue(0.0001f).setPosition(10,10).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("scale1").setLabel("scale1").setRange(0.01f,0.05f).setValue(0.0001f).setPosition(10,10).setSize(sliderWidth,sliderHeight);
     cp5.addSlider("radius1").setLabel("radius1").setRange(0.01f,0.05f).setValue(0.01f).setPosition(10,30).setSize(sliderWidth,sliderHeight);
     cp5.addSlider("off1").setLabel("off1").setRange(1,9).setValue(1).setPosition(10,50).setSize(sliderWidth,sliderHeight);
-    cp5.addSlider("off2").setLabel("off2").setRange(0.0001f,0.0005f).setValue(0.0001f).setPosition(10,70).setSize(sliderWidth,sliderHeight);
-
+    cp5.addSlider("off2").setLabel("off2").setRange(0.01f,0.05f).setValue(0.01f).setPosition(10,70).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("numFrames").setLabel("numFrames").setRange(24,240).setValue(48).setPosition(10,90).setSize(sliderWidth,sliderHeight);
+    //cp5.addSlider("spacing").setLabel("spacing").setRange(4,64).setValue(16).setNumberOfTickMarks(31).setPosition(10,90).setSize(sliderWidth,sliderHeight);
   }
 
 
 }
   static public void main(String[] passedArgs) {
-    String[] appletArgs = new String[] { "camouflage" };
+    String[] appletArgs = new String[] { "camoflage" };
     if (passedArgs != null) {
       PApplet.main(concat(appletArgs, passedArgs));
     } else {
