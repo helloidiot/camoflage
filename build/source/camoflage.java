@@ -18,8 +18,8 @@ public class camoflage extends PApplet {
 
 
 
-int viewport_w = 600;
-int viewport_h = 600;
+int viewport_w = 1280;
+int viewport_h = 720;
 // iphone x = 2436x1125
 
 boolean bMouseTime = true;
@@ -27,9 +27,6 @@ boolean bMouseTime = true;
 // classes
 CamoNoise n;
 GUI gui;
-
-// style
-int bg = 255;
 
 public void settings(){
   size(viewport_w, viewport_h);
@@ -49,12 +46,12 @@ public void setup(){
 
 public void draw(){
 
-  background(bg);
+  background(10);
 
   if (!recording) {
     if (bMouseTime){
-      if (mouseX >= 0 && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
-        t = mouseX*1.0f/width;
+      if (mouseX >= (viewport_w-camoW) && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
+        t = mouseX*1.0f/camoW;
       }
     }
     n.update();
@@ -73,7 +70,7 @@ public void showFPS(){
 
 public void keyPressed(){
   if (keyCode == ENTER){
-    recordingStart = time;
+    recordingStart = frame;
     recording = true;
   }
   if (key == 'm' || key == 'M'){
@@ -84,8 +81,23 @@ public void keyPressed(){
     println("BG white");
   }
   if (key == '2'){
-    bg = 0;
+    bg = 10;
     println("BG black");
+  }
+  if (key == 'q'){
+    smooth = true;
+    stark = false;
+    gradient = false;
+  }
+  if (key == 'w'){
+    smooth = false;
+    stark = true;
+    gradient = false;
+  }
+  if (key == 'e'){
+    smooth = false;
+    stark = false;
+    gradient = true;
   }
 }
 
@@ -97,12 +109,11 @@ int[][] result;
 float t, c;
 float mn = .5f * sqrt(3);
 float ia = atan(sqrt(.5f));
-int samplesPerFrame = 5; // times to sample each frame
-//int numFrames; // 4 secs at 24fps
-float shutterAngle = 1.5f; // 180 degree shutter
+int samplesPerFrame = 3; // times to sample each frame
+float shutterAngle = 0.5f; // 180 degree shutter
 boolean recording = false;
 float recordingStart;
-int time = 1;
+int frame = 1;
 float speed = 0.01f;
 
 public void motionBlur(){
@@ -118,7 +129,7 @@ public void motionBlur(){
   c = 0;
 
   for (int sa = 0; sa < samplesPerFrame; sa++) {
-    t = map(time-1 + sa * shutterAngle/samplesPerFrame, 0, numFrames, 0, 1);
+    t = map(frame-1 + sa * shutterAngle/samplesPerFrame, 0, numFrames, 0, 1);
 
     // Draw the image
     n.update();
@@ -140,12 +151,12 @@ public void motionBlur(){
   }
   updatePixels();
 
-  saveFrame("img/softWords" + time + ".png");
-  println(time,"/",numFrames);
+  saveFrame("img/camo" + frame + ".png");
+  println(frame,"/",numFrames);
 
-  time++;
+  frame++;
 
-  if ((time-recordingStart)==numFrames){
+  if ((frame-recordingStart)==numFrames){
     exit();
   }
 }
@@ -168,10 +179,12 @@ public void debug(){
 
 
 // Noise
-float scale1;// = 0.001;
-float radius1;// = 0.1;
+float camoOneScale, camoTwoScale, camoThreeScale, camoFourScale;
+float camoOneRadius, camoTwoRadius, camoThreeRadius, camoFourRadius;
 float scale2 = 0.002f;
 float radius2 = 0.2f;
+
+
 float scale3 = 0.003f;
 float radius3 = 0.3f;
 float scale4 = 0.004f;
@@ -180,8 +193,8 @@ float radius4 = 0.4f;
 int iterator = 0;
 float seed;
 
-int off1;
-float off2;
+int camoOneOff1, camoTwoOff1, camoThreeOff1, camoFourOff1;
+float camoOneOff2, camoTwoOff2, camoThreeOff2, camoFourOff2;
 
 // anim controls
 int numFrames;
@@ -192,8 +205,20 @@ int spacing = 12;
 
 // pallette
 // 253	67	84
+int low = 0;
+int lowmid = 80;
+int highmid = 160;
+int high = 255;
+int bg = 0;
+
+boolean smooth = false;
+boolean stark = false;
+boolean gradient = true;
 
 PGraphics moire1, moire2, moire3, moire4, camo;
+
+int camoW = 720;
+int camoH = 720;
 
 OpenSimplexNoise simplex;
 
@@ -202,12 +227,12 @@ class CamoNoise {
   public void init(){
 
     simplex = new OpenSimplexNoise();
-    moire1 = createGraphics(viewport_w, viewport_h);
-    moire2 = createGraphics(viewport_w, viewport_h);
-    moire3 = createGraphics(viewport_w, viewport_h);
-    moire4 = createGraphics(viewport_w, viewport_h);
+    moire1 = createGraphics(camoW, camoH);
+    moire2 = createGraphics(camoW, camoH);
+    moire3 = createGraphics(camoW, camoH);
+    moire4 = createGraphics(camoW, camoH);
 
-    camo = createGraphics(viewport_w, viewport_h);
+    camo = createGraphics(camoH, camoH);
 
   }
 
@@ -223,17 +248,17 @@ class CamoNoise {
     // createCamoRect(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
 
     // Three nice patterns
-    createCamoRect(camo, 0, 0, off1, off2/10, scale1/10, radius1, 0, 255);
-    createCamoRect(camo, spacing/2, spacing/2, 2, 0.002f, 0.002f, 0.2f, 255, 255);
-    createCamoRect(camo, 0, spacing/2, 3, 0.003f, 0.003f, 0.4f, 0, 255);
+    // createCamoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+    // createCamoRect(camo, spacing/2, spacing/2, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+    // createCamoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
 
     // // Four not as interesting patterns
-    // createCamoRect(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
-    // createCamoRect(camo, spacing/2, spacing/2, 3, 0.001, 0.002, 0.2, 0, 255);
-    // createCamoRect(camo, spacing/2, 0, 0.5, 0.007, 0.003, 0.3, 0, 255);
-    // createCamoRect(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
+    createCamoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+    createCamoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+    createCamoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+    createCamoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
 
-    //
+    // lines
     // createCamoLine(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
     // createCamoLine(camo, spacing/2, spacing/2, 3, 0.001, 0.002, 0.2, 0, 255);
     // createCamoLine(camo, spacing/2, 0, 0.5, 0.007, 0.003, 0.3, 0, 255);
@@ -248,26 +273,54 @@ class CamoNoise {
   public void display(){
     showFPS();
 
+    // show camo
+    push();
+    translate(viewport_w-camoW, 0);
+    // draw bg
+    fill(bg);
+    rect(0,0, camoW, camoH);
     image(camo, 0, 0);
+    pop();
   }
 
   public void createCamoRect(PGraphics pg, int originX, int originY, float offset1, float offset2, float s, float r, int col1, int col2){
-
+    push();
     pg.beginDraw();
+
+    float col = 0.0f;
 
     for (int x = originX, i = 0; x < viewport_w; x += spacing){
       for (int y = originY; y < viewport_h; y += spacing, i++){
 
         float off = offset1 * (float)simplex.eval(offset2 * x, offset2 * y);
 
-        // // gradient
-        // float ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
-        // float colour = map(ns, -1, 1, 0, 255);
+        if (smooth){
+          float ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
+          col = map(ns, -1, 1, 0, 255);
+        }
+        else if (stark){
+          boolean b = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off)) > 0;
+          col = b?col1:col2;
+        }
+        else if (gradient){
+          float ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
+          float c = map(ns, -1, 1, 0, 255);
 
-        // stark
-        boolean b = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off)) > 0;
-        float col = b?col1:col2;
+          if (c <= 85){
+            col = low;
+          }
+          else if (c > 85 && c <= 128){
+            col = lowmid;
+          }
+          else if (c > 128 && c <= 192){
+            col = highmid;
+          }
+          else if (c > 192 && c <= 255){
+            col = high;
+          }
+        }
 
+        // set style and draw
         pg.stroke(col);
         pg.fill(col);
         pg.rect(x, y, spacing/2, spacing/2);
@@ -275,6 +328,7 @@ class CamoNoise {
     }
 
     pg.endDraw();
+    pop();
   }
 
   public void createCamoLine(PGraphics pg, int originX, int originY, float offset1, float offset2, float s, float r, int col1, int col2){
@@ -310,10 +364,14 @@ ControlP5 cp5;
 // Styling
 int lightGrey = color(170,170,170);
 int darkGrey = color(44,48,55);
+int labelColour = color(0,0,0);
 
 // Sizing
 int sliderWidth = 100;
 int sliderHeight = 20;
+int sliderY = 10;
+int sliderX = 10;
+int sliderSpacing = sliderHeight+10;
 
 class GUI {
 
@@ -323,16 +381,21 @@ class GUI {
     cp5 = new ControlP5(p);
     cp5.setAutoDraw(false);
 
+    setStyling();
+
+    //createLabels();
+    //createButtons();
+    createGlobalSliders(sliderX, viewport_h-100);
+    createCamoSliders();
+
+    pop();
+  }
+
+  public void setStyling(){
     // Set Styling
     cp5.setColorForeground(lightGrey);
     cp5.setColorBackground(darkGrey);
     cp5.setColorActive(lightGrey);
-
-    //createLabels();
-    //createButtons();
-    createSliders();
-
-    pop();
   }
 
   public void display(PApplet p){
@@ -341,14 +404,52 @@ class GUI {
     hint(ENABLE_DEPTH_TEST);
   }
 
-  public void createSliders(){
-    // Frequency
-    cp5.addSlider("scale1").setLabel("scale1").setRange(0.01f,0.05f).setValue(0.0001f).setPosition(10,10).setSize(sliderWidth,sliderHeight);
-    cp5.addSlider("radius1").setLabel("radius1").setRange(0.01f,0.05f).setValue(0.01f).setPosition(10,30).setSize(sliderWidth,sliderHeight);
-    cp5.addSlider("off1").setLabel("off1").setRange(1,9).setValue(1).setPosition(10,50).setSize(sliderWidth,sliderHeight);
-    cp5.addSlider("off2").setLabel("off2").setRange(0.01f,0.05f).setValue(0.01f).setPosition(10,70).setSize(sliderWidth,sliderHeight);
-    cp5.addSlider("numFrames").setLabel("numFrames").setRange(24,240).setValue(48).setPosition(10,90).setSize(sliderWidth,sliderHeight);
+  public void createCamoSliders(){
+    push();
+    createCamoOneSliders(sliderX, sliderY);
+    createCamoTwoSliders(sliderX, 150);
+    createCamoThreeSliders(sliderX, 300);
+    createCamoFourSliders(sliderX, 450);
+    pop();
+  }
+
+  public void createLabels(){
+
+  }
+
+  // global controls
+  public void createGlobalSliders(int x, int y){
     //cp5.addSlider("spacing").setLabel("spacing").setRange(4,64).setValue(16).setNumberOfTickMarks(31).setPosition(10,90).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("numFrames").setLabel("numFrames").setRange(24,240).setValue(48).setPosition(x,y).setSize(sliderWidth,sliderHeight);
+  }
+
+  // camo controls
+  public void createCamoOneSliders(int x, int y){
+    cp5.addSlider("camoOneScale").setLabel("scale").setRange(0.01f,0.5f).setValue(0.02f).setPosition(x,y).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoOneRadius").setLabel("radius").setRange(0.01f,0.5f).setValue(0.1f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoOneOff1").setLabel("off1").setRange(1,9).setValue(1).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoOneOff2").setLabel("off2").setRange(0.01f,0.05f).setValue(0.01f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+  }
+
+  public void createCamoTwoSliders(int x, int y){
+    cp5.addSlider("camoTwoScale").setLabel("scale").setRange(0.01f,0.5f).setValue(0.02f).setPosition(x,y).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoTwoRadius").setLabel("radius").setRange(0.01f,0.5f).setValue(0.1f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoTwoOff1").setLabel("off1").setRange(1,9).setValue(1).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoTwoOff2").setLabel("off2").setRange(0.01f,0.05f).setValue(0.01f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+  }
+
+  public void createCamoThreeSliders(int x, int y){
+    cp5.addSlider("camoThreeScale").setLabel("scale").setRange(0.01f,0.5f).setValue(0.02f).setPosition(x,y).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoThreeRadius").setLabel("radius").setRange(0.01f,0.5f).setValue(0.1f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoThreeOff1").setLabel("off1").setRange(1,9).setValue(1).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoThreeOff2").setLabel("off2").setRange(0.01f,0.05f).setValue(0.01f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+  }
+
+  public void createCamoFourSliders(int x, int y){
+    cp5.addSlider("camoFourScale").setLabel("scale").setRange(0.01f,0.5f).setValue(0.02f).setPosition(x,y).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoFourRadius").setLabel("radius").setRange(0.01f,0.5f).setValue(0.1f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoFourOff1").setLabel("off1").setRange(1,9).setValue(1).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
+    cp5.addSlider("camoFourOff2").setLabel("off2").setRange(0.01f,0.05f).setValue(0.01f).setPosition(x,y+=sliderSpacing).setSize(sliderWidth,sliderHeight);
   }
 
 

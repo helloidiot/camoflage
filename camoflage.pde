@@ -1,7 +1,7 @@
 
 
-int viewport_w = 600;
-int viewport_h = 600;
+int viewport_w = 1280;
+int viewport_h = 720;
 // iphone x = 2436x1125
 
 boolean bMouseTime = true;
@@ -9,9 +9,6 @@ boolean bMouseTime = true;
 // classes
 CamoNoise n;
 GUI gui;
-
-// style
-int bg = 255;
 
 void settings(){
   size(viewport_w, viewport_h);
@@ -31,12 +28,12 @@ void setup(){
 
 void draw(){
 
-  background(bg);
+  background(10);
 
   if (!recording) {
     if (bMouseTime){
-      if (mouseX >= 0 && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
-        t = mouseX*1.0/width;
+      if (mouseX >= (viewport_w-camoW) && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
+        t = mouseX*1.0/camoW;
       }
     }
     n.update();
@@ -55,7 +52,7 @@ void showFPS(){
 
 void keyPressed(){
   if (keyCode == ENTER){
-    recordingStart = time;
+    recordingStart = frame;
     recording = true;
   }
   if (key == 'm' || key == 'M'){
@@ -66,8 +63,23 @@ void keyPressed(){
     println("BG white");
   }
   if (key == '2'){
-    bg = 0;
+    bg = 10;
     println("BG black");
+  }
+  if (key == 'q'){
+    smooth = true;
+    stark = false;
+    gradient = false;
+  }
+  if (key == 'w'){
+    smooth = false;
+    stark = true;
+    gradient = false;
+  }
+  if (key == 'e'){
+    smooth = false;
+    stark = false;
+    gradient = true;
   }
 }
 
@@ -79,12 +91,11 @@ int[][] result;
 float t, c;
 float mn = .5 * sqrt(3);
 float ia = atan(sqrt(.5));
-int samplesPerFrame = 5; // times to sample each frame
-//int numFrames; // 4 secs at 24fps
-float shutterAngle = 1.5; // 180 degree shutter
+int samplesPerFrame = 3; // times to sample each frame
+float shutterAngle = 0.5; // 180 degree shutter
 boolean recording = false;
 float recordingStart;
-int time = 1;
+int frame = 1;
 float speed = 0.01;
 
 void motionBlur(){
@@ -100,7 +111,7 @@ void motionBlur(){
   c = 0;
 
   for (int sa = 0; sa < samplesPerFrame; sa++) {
-    t = map(time-1 + sa * shutterAngle/samplesPerFrame, 0, numFrames, 0, 1);
+    t = map(frame-1 + sa * shutterAngle/samplesPerFrame, 0, numFrames, 0, 1);
 
     // Draw the image
     n.update();
@@ -122,12 +133,12 @@ void motionBlur(){
   }
   updatePixels();
 
-  saveFrame("img/softWords" + time + ".png");
-  println(time,"/",numFrames);
+  saveFrame("img/camo" + frame + ".png");
+  println(frame,"/",numFrames);
 
-  time++;
+  frame++;
 
-  if ((time-recordingStart)==numFrames){
+  if ((frame-recordingStart)==numFrames){
     exit();
   }
 }
