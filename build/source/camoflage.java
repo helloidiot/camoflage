@@ -23,6 +23,7 @@ int viewport_h = 720;
 // iphone x = 2436x1125
 
 boolean bMouseTime = true;
+int desiredFrameRate = 24;
 
 // classes
 CamoNoise n;
@@ -51,14 +52,15 @@ public void draw(){
   if (!recording) {
     if (bMouseTime){
       if (mouseX >= (viewport_w-camoW) && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
-        t = mouseX*1.0f/camoW;
+        t = map(mouseX*1.0f/camoW, 0.7f, 1.7f, 0.0f, 1.0f); // TODO fix this bodge, mouse time should equal export sequence time
+        //println("mouse control t: " + t);
       }
     }
     n.update();
     n.display();
   }
   else {
-    motionBlur();
+    exportSequence();
   }
 
 }
@@ -72,31 +74,19 @@ public void keyPressed(){
     recordingStart = frame;
     recording = true;
   }
+  if (key == 's' || key == 'S'){
+    bSeed = !bSeed;
+  }
   if (key == 'm' || key == 'M'){
     bMouseTime = !bMouseTime;
   }
   if (key == '1'){
-    bg = 255;
+    camoBG = 255;
     println("BG white");
   }
   if (key == '2'){
-    bg = 10;
+    camoBG = 10;
     println("BG black");
-  }
-  if (key == 'q'){
-    soft = true;
-    stark = false;
-    gradient = false;
-  }
-  if (key == 'w'){
-    soft = false;
-    stark = true;
-    gradient = false;
-  }
-  if (key == 'e'){
-    soft = false;
-    stark = false;
-    gradient = true;
   }
 }
 
@@ -131,9 +121,14 @@ float recordingStart;
 int frame = 1;
 float speed = 0.01f;
 
-public void motionBlur(){
-  // GUI numFrames control
-  //numFrames = sNumFrames;
+//TODO exports only the buffer, not including gui
+
+public void exportStill(){
+  saveFrame("img/camo" + frame + ".png");
+  println(".png exported to /img/");
+}
+
+public void exportSequence(){
 
   for (int i=0; i<width*height; i++){
     for (int a=0; a<3; a++){
@@ -145,6 +140,7 @@ public void motionBlur(){
 
   for (int sa = 0; sa < samplesPerFrame; sa++) {
     t = map(frame-1 + sa * shutterAngle/samplesPerFrame, 0, numFrames, 0, 1);
+    //println("motion blur t: " + t);
 
     // Draw the image
     n.update();
@@ -160,7 +156,7 @@ public void motionBlur(){
 
   loadPixels();
   for (int i=0; i<pixels.length; i++){
-    pixels[i] = 0xff << 24 |
+    pixels[i] = 0xff << desiredFrameRate |
     PApplet.parseInt(result[i][0]*1.0f/samplesPerFrame) << 16 |
     PApplet.parseInt(result[i][1]*1.0f/samplesPerFrame) << 8 |
     PApplet.parseInt(result[i][2]*1.0f/samplesPerFrame);
@@ -177,21 +173,20 @@ public void motionBlur(){
   }
 }
 
+public void exportSequenceMotionBlur(){
+
+}
+int spacing = 12;
 
 // Noise
 float camoOneScale, camoTwoScale, camoThreeScale, camoFourScale;
 float camoOneRadius, camoTwoRadius, camoThreeRadius, camoFourRadius;
-float scale2 = 0.002f;
-float radius2 = 0.2f;
 
-
-float scale3 = 0.003f;
-float radius3 = 0.3f;
-float scale4 = 0.004f;
-float radius4 = 0.4f;
-
+boolean bNoiseOne, bNoiseTwo, bNoiseThree, bNoiseFour;
 int iterator = 0;
-float seed;
+float seed = random(10,1000);
+float d = random(10,120);
+boolean bSeed = true;
 
 int camoOneOff1, camoTwoOff1, camoThreeOff1, camoFourOff1;
 float camoOneOff2, camoTwoOff2, camoThreeOff2, camoFourOff2;
@@ -199,25 +194,20 @@ float camoOneOff2, camoTwoOff2, camoThreeOff2, camoFourOff2;
 // anim controls
 int numFrames;
 
-// Moire
-// int szX, szY = 256;
-int spacing = 12;
+int camoBG = 0;
 
-// pallette
-// 253	67	84
+boolean soft, stark, gradient;
 int low = 0;
 int lowmid = 80;
 int highmid = 160;
 int high = 255;
-int bg = 0;
+// pallette
+// 253	67	84
 
-boolean soft;
-boolean stark;
-boolean gradient;
-
-boolean bNoiseOne, bNoiseTwo, bNoiseThree, bNoiseFour;
-
-PGraphics moire1, moire2, moire3, moire4, camo;
+PGraphics camo;
+PGraphics[] camoBuffers;
+boolean indBuffer;
+int numBuffers = 4;
 
 int camoW = 720;
 int camoH = 720;
@@ -229,12 +219,16 @@ class CamoNoise {
   public void init(){
 
     simplex = new OpenSimplexNoise();
-    // moire1 = createGraphics(camoW, camoH);
-    // moire2 = createGraphics(camoW, camoH);
-    // moire3 = createGraphics(camoW, camoH);
-    // moire4 = createGraphics(camoW, camoH);
 
-    camo = createGraphics(camoH, camoH);
+    camo = createGraphics(camoH, camoH); // one buffer for mixed
+    // camoBuffer1 = createGraphics(camoW, camoH); // one buffer for each
+    // camoBuffer2 = createGraphics(camoW, camoH);
+    // camoBuffer3 = createGraphics(camoW, camoH);
+    // camoBuffer4 = createGraphics(camoW, camoH);
+
+    // for (int i = 0; i < numBuffers; i++){
+    //   camoBuffers[i] = createGraphics(camoW, camoH);
+    // }
 
   }
 
@@ -245,21 +239,44 @@ class CamoNoise {
     camo.beginDraw();
     camo.clear(); // empty the buffer
 
-    // Three nice patterns
-    // camoRect(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
-    // camoRect(camo, spacing/2, spacing/2, 3, 0.001, 0.002, 0.2, 0, 255);
-    // camoRect(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
+    // Four not as interesting patterns
+    if (indBuffer){
 
-    // Three nice patterns
-    // camoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
-    // camoRect(camo, spacing/2, spacing/2, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
-    // camoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+      for (int i = 0; i < numBuffers; i++){
+        camoBuffers[i].beginDraw();
+        camoBuffers[i].clear();
 
-    // // Four not as interesting patterns
-    if (bNoiseOne)  camoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
-    if (bNoiseTwo)  camoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
-    if (bNoiseThree)camoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
-    if (bNoiseFour) camoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
+        int x, y;
+        if (i == 1 && bNoiseOne){
+          x = 0;
+          y = 0;
+          camoRect(camoBuffers[i], x, y, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+        }
+        else if (i == 2 && bNoiseTwo){
+          x = spacing/2;
+          y = 0;
+          camoRect(camoBuffers[i], x, y, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+        }
+        else if (i == 3){
+          x = 0;
+          y = spacing/2;
+          camoRect(camoBuffers[i], x, y, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+        }
+        else if (i == 4){
+          x = 0;
+          y = spacing/2;
+          camoRect(camoBuffers[i], x, y, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
+        }
+
+        camoBuffers[i].endDraw();
+      }
+    }
+    else  if (!indBuffer){
+      if (bNoiseOne)  camoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+      if (bNoiseTwo)  camoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+      if (bNoiseThree)camoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+      if (bNoiseFour) camoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
+    }
 
     camo.endDraw();
 
@@ -273,7 +290,7 @@ class CamoNoise {
     push();
     translate(viewport_w-camoW, 0);
     // draw bg
-    fill(bg);
+    fill(camoBG);
     rect(0,0, camoW, camoH);
     image(camo, 0, 0);
     pop();
@@ -290,19 +307,34 @@ class CamoNoise {
       for (int y = originY; y < viewport_h; y += spacing, i++){
 
         float off = offset1 * (float)simplex.eval(offset2 * x, offset2 * y);
+        float ns = 0.0f;
+
+        float easeT = ease(t, 1.0f);
+        float p = 1.0f * i / i;
+
+        if (bSeed){
+          ns = (float)simplex.eval(s * x, s * y, seed + r * sin(TWO_PI * easeT + off), r * cos(TWO_PI * easeT + off));
+        }
+        else{
+          ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
+
+        }
+
 
         if (soft){
-          float ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
+          // col = map(ns, -1, 1, 0, 255);
+          map(pNoise(offset(p)-t, r), -1, 1, 0, 255);
           col = map(ns, -1, 1, 0, 255);
         }
         else if (stark){
-          boolean b = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off)) > 0;
+          boolean b = ns > 0;
           col = b?col1:col2;
         }
         else if (gradient){
-          float ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
           float c = map(ns, -1, 1, 0, 255);
 
+
+          // 4 colours
           if (c <= 85){
             col = low;
           }
@@ -328,6 +360,23 @@ class CamoNoise {
     pop();
   }
 
+  // // 1-periodic function from a circle in noise
+  public float pNoise(float q, float r){
+    return (float)simplex.eval(seed + r * cos(TWO_PI * q), r * sin(TWO_PI * q));
+  }
+
+  public float offset(float p){
+    return 5.0f*pow(p,3.0f);
+  }
+
+  public float ease(float p, float g) {
+    if (p < 0.5f)
+      return 0.5f * pow(2*p, g);
+    else
+      return 1 - 0.5f * pow(2*(1 - p), g);
+  }
+
+
 }
 
 ControlP5 cp5;
@@ -345,8 +394,7 @@ int guiH = viewport_h;
 // Sizing
 int sliderW = 100;
 int sliderH = 10;
-int sliderY = 10;
-int sliderX = 10;
+PVector sliderPos = new PVector(10, 10);
 int sliderPadding = 10;
 int sliderSpacing = sliderH+sliderPadding;
 
@@ -361,8 +409,11 @@ int controlGap = 30;
 // accordians for each noise setting
 
 Accordion accordion;
-Group noiseGroupOne, noiseGroupTwo, noiseGroupThree, noiseGroupFour, globalGroup;
-RadioButton radioShading;
+int accordionW = 200;
+int accordionH = 50;
+Group noiseGroupOne, noiseGroupTwo, noiseGroupThree, noiseGroupFour, animationGroup, styleGroup;
+
+String filename;
 
 class GUI {
 
@@ -374,9 +425,8 @@ class GUI {
 
     setStyling();
     createGroups();
-
-    createControls();
     createAccordian();
+    createControls();
 
     pop();
 
@@ -394,13 +444,16 @@ class GUI {
 
   public void createGroups(){
     // noise
-    noiseGroupOne = cp5.addGroup("Noise One").setBackgroundHeight(50);
-    noiseGroupTwo = cp5.addGroup("Noise Two").setBackgroundHeight(50);
-    noiseGroupThree = cp5.addGroup("Noise Three").setBackgroundHeight(50);
-    noiseGroupFour = cp5.addGroup("Noise Four").setBackgroundHeight(50);
+    noiseGroupOne = cp5.addGroup("Noise One").setBackgroundHeight(accordionH);
+    noiseGroupTwo = cp5.addGroup("Noise Two").setBackgroundHeight(accordionH);
+    noiseGroupThree = cp5.addGroup("Noise Three").setBackgroundHeight(accordionH);
+    noiseGroupFour = cp5.addGroup("Noise Four").setBackgroundHeight(accordionH);
 
     // global
-    globalGroup = cp5.addGroup("Global Settings").setBackgroundHeight(150);
+    animationGroup = cp5.addGroup("Animation Settings").setBackgroundHeight(accordionH);
+
+    // style
+    styleGroup = cp5.addGroup("Style Settings").setBackgroundHeight(accordionH);
   }
 
   public void setStyling(){
@@ -410,66 +463,74 @@ class GUI {
   }
 
   public void createAccordian(){
+    accordion = cp5.addAccordion("accordion").setPosition(sliderPos.x,sliderPos.y).setWidth(accordionW)
+                .addItem(animationGroup).addItem(styleGroup).addItem(noiseGroupOne).addItem(noiseGroupTwo).addItem(noiseGroupThree).addItem(noiseGroupFour);
 
-    accordion = cp5.addAccordion("acc").setPosition(40,40).setWidth(200)
-                .addItem(globalGroup).addItem(noiseGroupOne).addItem(noiseGroupTwo).addItem(noiseGroupThree).addItem(noiseGroupFour);
-
-    accordion.open(0);
-    accordion.close(1,2,3,4);
+    accordion.open(0,1);
+    accordion.close(2,3,4,5);
     accordion.setCollapseMode(Accordion.MULTI);
   }
 
   public void createControls(){
     push();
 
-    // global
-    globalControls(sliderX, sliderY, globalGroup);
+    // animation
+    animationControls(sliderPos, animationGroup);
+
+    // style
+    styleControls(sliderPos, styleGroup);
 
     // should be conditional depending on user selection
-    noiseControls(sliderX, sliderY, "camoOneScale", "camoOneRadius", "camoOneOff1", "camoOneOff2", noiseGroupOne);
-    noiseControls(sliderX, sliderY, "camoTwoScale", "camoTwoRadius", "camoTwoOff1", "camoTwoOff2", noiseGroupTwo);
-    noiseControls(sliderX, sliderY, "camoThreeScale", "camoThreeRadius", "camoThreeOff1", "camoThreeOff2", noiseGroupThree);
-    noiseControls(sliderX, sliderY, "camoFourScale", "camoFourRadius", "camoFourOff1", "camoFourOff2", noiseGroupFour);
+    noiseControls(sliderPos, "camoOneScale", "camoOneRadius", "camoOneOff1", "camoOneOff2", noiseGroupOne);
+    noiseControls(sliderPos, "camoTwoScale", "camoTwoRadius", "camoTwoOff1", "camoTwoOff2", noiseGroupTwo);
+    noiseControls(sliderPos, "camoThreeScale", "camoThreeRadius", "camoThreeOff1", "camoThreeOff2", noiseGroupThree);
+    noiseControls(sliderPos, "camoFourScale", "camoFourRadius", "camoFourOff1", "camoFourOff2", noiseGroupFour);
 
     pop();
   }
 
+  // animation controls
+  public void animationControls(PVector p, Group g){
+
+    PVector _p = new PVector(p.x, p.y);
+
+    cp5.addSlider("numFrames").setLabel("numFrames").setRange(24,240).setValue(48).setPosition(_p.x,_p.y).setSize(sliderW,sliderH).moveTo(g);
+
+    cp5.addToggle("bNoiseOne").setLabel("Noise 1").setPosition(_p.x,_p.y+=sliderSpacing).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
+    cp5.addToggle("bNoiseTwo").setLabel("Noise 2").setPosition(_p.x+=toggleSpacingX,_p.y).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
+    cp5.addToggle("bNoiseThree").setLabel("Noise 3").setPosition(_p.x+=toggleSpacingX,_p.y).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
+    cp5.addToggle("bNoiseFour").setLabel("Noise 4").setPosition(_p.x+=toggleSpacingX,_p.y).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
+
+    cp5.addButton("exportStill").setPosition(p.x,_p.y+=sliderSpacing*2).setSize(sliderW,sliderH);
+    cp5.addButton("exportSequence").setPosition(p.x,_p.y+=sliderSpacing).setSize(sliderW,sliderH);
+  }
+
   // global controls
-  public void globalControls(int x, int y, Group g){
+  public void styleControls(PVector p, Group g){
 
-    int _x = x;
-    int _y = y;
+    PVector _p = new PVector(p.x, p.y);
 
-    cp5.addSlider("spacing").setLabel("spacing").setRange(4,64).setValue(16).setNumberOfTickMarks(31).setPosition(x,y).setSize(sliderW,sliderH).moveTo(g);
-    cp5.addSlider("numFrames").setLabel("numFrames").setRange(24,240).setValue(48).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
-
-    cp5.addToggle("bNoiseOne").setLabel("Noise 1").setPosition(x,y+=sliderSpacing).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
-    cp5.addToggle("bNoiseTwo").setLabel("Noise 2").setPosition(x+=toggleSpacingX,y).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
-    cp5.addToggle("bNoiseThree").setLabel("Noise 3").setPosition(x+=toggleSpacingX,y).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
-    cp5.addToggle("bNoiseFour").setLabel("Noise 4").setPosition(x+=toggleSpacingX,y).setSize(toggleW,toggleH).setValue(false).setMode(ControlP5.SWITCH).moveTo(g);
+    cp5.addSlider("spacing").setLabel("spacing").setRange(4,64).setValue(16).setNumberOfTickMarks(31).setPosition(_p.x,_p.y).setSize(sliderW,sliderH).moveTo(g);
+    cp5.addSlider("camoBG").setLabel("background").setRange(0,255).setValue(10).setNumberOfTickMarks(255).setPosition(_p.x,_p.y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
 
     // shading choices
-    cp5.addToggle("soft").setPosition(_x,y+=controlGap).setSize(toggleW,toggleH).moveTo(g);
-    cp5.addToggle("stark").setPosition(_x+=toggleSpacingX,y).setSize(toggleW,toggleH).moveTo(g);
-    cp5.addToggle("gradient").setPosition(_x+=toggleSpacingX,y).setSize(toggleW,toggleH).moveTo(g);
+    cp5.addToggle("soft").setPosition(_p.x,_p.y+=controlGap).setSize(toggleW,toggleH).moveTo(g);
+    cp5.addToggle("stark").setPosition(_p.x+=toggleSpacingX,_p.y).setSize(toggleW,toggleH).moveTo(g);
+    cp5.addToggle("gradient").setPosition(_p.x+=toggleSpacingX,_p.y).setSize(toggleW,toggleH).moveTo(g);
+
 
   }
 
-  public void noiseControls(int x, int y, String s, String r, String o1, String o2, Group g){
-    cp5.addSlider(s).setLabel("scale").setRange(0.01f,0.5f).setValue(0.02f).setPosition(x,y).setSize(sliderW,sliderH).moveTo(g);
-    cp5.addSlider(r).setLabel("radius").setRange(0.01f,0.5f).setValue(0.1f).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
-    cp5.addSlider(o1).setLabel("off1").setRange(1,9).setValue(1).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
-    cp5.addSlider(o2).setLabel("off2").setRange(0.01f,0.20f).setValue(0.01f).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
+  public void noiseControls(PVector p, String s, String r, String o1, String o2, Group g){
+
+    PVector _p = new PVector(p.x, p.y);
+
+    cp5.addSlider(s).setLabel("scale").setRange(0.01f,0.5f).setValue(0.02f).setPosition(_p.x,_p.y).setSize(sliderW,sliderH).moveTo(g);
+    cp5.addSlider(r).setLabel("radius").setRange(0.01f,0.5f).setValue(0.1f).setPosition(_p.x,_p.y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
+    cp5.addSlider(o1).setLabel("off1").setRange(1,9).setValue(1).setPosition(_p.x,_p.y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
+    cp5.addSlider(o2).setLabel("off2").setRange(0.01f,0.20f).setValue(0.01f).setPosition(_p.x,_p.y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
   }
 
-  public void bNoiseOne(boolean theFlag) {
-    if(theFlag==true) {
-      bNoiseOne = true;
-    } else {
-      bNoiseOne = false;
-    }
-    println("bNoise One = " + bNoiseOne);
-  }
 
 
 }

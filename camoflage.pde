@@ -5,6 +5,7 @@ int viewport_h = 720;
 // iphone x = 2436x1125
 
 boolean bMouseTime = true;
+int desiredFrameRate = 24;
 
 // classes
 CamoNoise n;
@@ -33,14 +34,15 @@ void draw(){
   if (!recording) {
     if (bMouseTime){
       if (mouseX >= (viewport_w-camoW) && mouseX < viewport_w && mouseY >=0 && mouseY < viewport_h){
-        t = mouseX*1.0/camoW;
+        t = map(mouseX*1.0/camoW, 0.7, 1.7, 0.0, 1.0); // TODO fix this bodge, mouse time should equal export sequence time
+        //println("mouse control t: " + t);
       }
     }
     n.update();
     n.display();
   }
   else {
-    motionBlur();
+    exportSequence();
   }
 
 }
@@ -54,31 +56,19 @@ void keyPressed(){
     recordingStart = frame;
     recording = true;
   }
+  if (key == 's' || key == 'S'){
+    bSeed = !bSeed;
+  }
   if (key == 'm' || key == 'M'){
     bMouseTime = !bMouseTime;
   }
   if (key == '1'){
-    bg = 255;
+    camoBG = 255;
     println("BG white");
   }
   if (key == '2'){
-    bg = 10;
+    camoBG = 10;
     println("BG black");
-  }
-  if (key == 'q'){
-    soft = true;
-    stark = false;
-    gradient = false;
-  }
-  if (key == 'w'){
-    soft = false;
-    stark = true;
-    gradient = false;
-  }
-  if (key == 'e'){
-    soft = false;
-    stark = false;
-    gradient = true;
   }
 }
 
@@ -113,9 +103,14 @@ float recordingStart;
 int frame = 1;
 float speed = 0.01;
 
-void motionBlur(){
-  // GUI numFrames control
-  //numFrames = sNumFrames;
+//TODO exports only the buffer, not including gui
+
+void exportStill(){
+  saveFrame("img/camo" + frame + ".png");
+  println(".png exported to /img/");
+}
+
+void exportSequence(){
 
   for (int i=0; i<width*height; i++){
     for (int a=0; a<3; a++){
@@ -127,6 +122,7 @@ void motionBlur(){
 
   for (int sa = 0; sa < samplesPerFrame; sa++) {
     t = map(frame-1 + sa * shutterAngle/samplesPerFrame, 0, numFrames, 0, 1);
+    //println("motion blur t: " + t);
 
     // Draw the image
     n.update();
@@ -142,7 +138,7 @@ void motionBlur(){
 
   loadPixels();
   for (int i=0; i<pixels.length; i++){
-    pixels[i] = 0xff << 24 |
+    pixels[i] = 0xff << desiredFrameRate |
     int(result[i][0]*1.0/samplesPerFrame) << 16 |
     int(result[i][1]*1.0/samplesPerFrame) << 8 |
     int(result[i][2]*1.0/samplesPerFrame);
@@ -157,4 +153,8 @@ void motionBlur(){
   if ((frame-recordingStart)==numFrames){
     exit();
   }
+}
+
+void exportSequenceMotionBlur(){
+
 }
