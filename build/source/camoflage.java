@@ -246,26 +246,20 @@ class CamoNoise {
     camo.clear(); // empty the buffer
 
     // Three nice patterns
-    // createCamoRect(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
-    // createCamoRect(camo, spacing/2, spacing/2, 3, 0.001, 0.002, 0.2, 0, 255);
-    // createCamoRect(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
+    // camoRect(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
+    // camoRect(camo, spacing/2, spacing/2, 3, 0.001, 0.002, 0.2, 0, 255);
+    // camoRect(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
 
     // Three nice patterns
-    // createCamoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
-    // createCamoRect(camo, spacing/2, spacing/2, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
-    // createCamoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+    // camoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+    // camoRect(camo, spacing/2, spacing/2, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+    // camoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
 
     // // Four not as interesting patterns
-    if (bNoiseOne)  createCamoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
-    if (bNoiseTwo)  createCamoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
-    if (bNoiseThree)createCamoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
-    if (bNoiseFour) createCamoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
-
-    // lines
-    // createCamoLine(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
-    // createCamoLine(camo, spacing/2, spacing/2, 3, 0.001, 0.002, 0.2, 0, 255);
-    // createCamoLine(camo, spacing/2, 0, 0.5, 0.007, 0.003, 0.3, 0, 255);
-    // createCamoLine(camo, 0, spacing/2, 4, 0.0005, 0.004, 0.4, 0, 255);
+    if (bNoiseOne)  camoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+    if (bNoiseTwo)  camoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+    if (bNoiseThree)camoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+    if (bNoiseFour) camoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
 
     camo.endDraw();
 
@@ -285,7 +279,8 @@ class CamoNoise {
     pop();
   }
 
-  public void createCamoRect(PGraphics pg, int originX, int originY, float offset1, float offset2, float s, float r, int col1, int col2){
+  public void camoRect(PGraphics pg, int originX, int originY, float offset1, float offset2, float s, float r, int col1, int col2){
+
     push();
     pg.beginDraw();
 
@@ -333,32 +328,6 @@ class CamoNoise {
     pop();
   }
 
-  public void createCamoLine(PGraphics pg, int originX, int originY, float offset1, float offset2, float s, float r, int col1, int col2){
-
-    pg.beginDraw();
-
-    for (int x = originX, i = 0; x < viewport_w; x += spacing){
-      for (int y = originY; y < viewport_h; y += spacing, i++){
-
-        float off = offset1 * (float)simplex.eval(offset2 * x, offset2 * y);
-
-        // // gradient
-        // float ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
-        // float colour = map(ns, -1, 1, 0, 255);
-
-        // stark
-        boolean b = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off)) > 0;
-        float col = b?col1:col2;
-
-        pg.stroke(col, 50);
-        pg.fill(col, 50);
-        pg.strokeWeight(spacing/4);
-        pg.rect(x, y, spacing, spacing/2);
-      }
-    }
-
-    pg.endDraw();
-  }
 }
 
 ControlP5 cp5;
@@ -490,7 +459,7 @@ class GUI {
     cp5.addSlider(s).setLabel("scale").setRange(0.01f,0.5f).setValue(0.02f).setPosition(x,y).setSize(sliderW,sliderH).moveTo(g);
     cp5.addSlider(r).setLabel("radius").setRange(0.01f,0.5f).setValue(0.1f).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
     cp5.addSlider(o1).setLabel("off1").setRange(1,9).setValue(1).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
-    cp5.addSlider(o2).setLabel("off2").setRange(0.01f,0.05f).setValue(0.01f).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
+    cp5.addSlider(o2).setLabel("off2").setRange(0.01f,0.20f).setValue(0.01f).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
   }
 
   public void bNoiseOne(boolean theFlag) {

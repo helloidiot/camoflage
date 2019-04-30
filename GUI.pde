@@ -128,7 +128,7 @@ class GUI {
     cp5.addSlider(s).setLabel("scale").setRange(0.01,0.5).setValue(0.02).setPosition(x,y).setSize(sliderW,sliderH).moveTo(g);
     cp5.addSlider(r).setLabel("radius").setRange(0.01,0.5).setValue(0.1).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
     cp5.addSlider(o1).setLabel("off1").setRange(1,9).setValue(1).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
-    cp5.addSlider(o2).setLabel("off2").setRange(0.01,0.05).setValue(0.01).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
+    cp5.addSlider(o2).setLabel("off2").setRange(0.01,0.20).setValue(0.01).setPosition(x,y+=sliderSpacing).setSize(sliderW,sliderH).moveTo(g);
   }
 
   void bNoiseOne(boolean theFlag) {
