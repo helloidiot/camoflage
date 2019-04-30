@@ -27,8 +27,8 @@ void setup(){
 }
 
 void draw(){
-
-  background(10);
+  showFPS();
+  gui.display(this);
 
   if (!recording) {
     if (bMouseTime){
@@ -43,7 +43,6 @@ void draw(){
     motionBlur();
   }
 
-  gui.display(this);
 }
 
 void showFPS(){
@@ -67,22 +66,38 @@ void keyPressed(){
     println("BG black");
   }
   if (key == 'q'){
-    smooth = true;
+    soft = true;
     stark = false;
     gradient = false;
   }
   if (key == 'w'){
-    smooth = false;
+    soft = false;
     stark = true;
     gradient = false;
   }
   if (key == 'e'){
-    smooth = false;
+    soft = false;
     stark = false;
     gradient = true;
   }
 }
 
+
+/// HELPERS ///
+
+void push(){
+  pushMatrix();
+  pushStyle();
+}
+
+void pop(){
+  popMatrix();
+  popStyle();
+}
+
+void debug(){
+
+}
 
 //////////////////////////////////////
 
@@ -122,6 +137,7 @@ void motionBlur(){
       result[i][1] += pixels[i] >> 8 & 0xff;
       result[i][2] += pixels[i] & 0xff;
     }
+    updatePixels();
   }
 
   loadPixels();
@@ -141,20 +157,4 @@ void motionBlur(){
   if ((frame-recordingStart)==numFrames){
     exit();
   }
-}
-
-/// HELPERS ///
-
-void push(){
-  pushMatrix();
-  pushStyle();
-}
-
-void pop(){
-  popMatrix();
-  popStyle();
-}
-
-void debug(){
-
 }

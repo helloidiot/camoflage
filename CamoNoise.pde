@@ -33,9 +33,11 @@ int highmid = 160;
 int high = 255;
 int bg = 0;
 
-boolean smooth = false;
-boolean stark = false;
-boolean gradient = true;
+boolean soft;
+boolean stark;
+boolean gradient;
+
+boolean bNoiseOne, bNoiseTwo, bNoiseThree, bNoiseFour;
 
 PGraphics moire1, moire2, moire3, moire4, camo;
 
@@ -49,10 +51,10 @@ class CamoNoise {
   void init(){
 
     simplex = new OpenSimplexNoise();
-    moire1 = createGraphics(camoW, camoH);
-    moire2 = createGraphics(camoW, camoH);
-    moire3 = createGraphics(camoW, camoH);
-    moire4 = createGraphics(camoW, camoH);
+    // moire1 = createGraphics(camoW, camoH);
+    // moire2 = createGraphics(camoW, camoH);
+    // moire3 = createGraphics(camoW, camoH);
+    // moire4 = createGraphics(camoW, camoH);
 
     camo = createGraphics(camoH, camoH);
 
@@ -63,6 +65,7 @@ class CamoNoise {
     float t = 1.0 * iterator / numFrames;
 
     camo.beginDraw();
+    camo.clear(); // empty the buffer
 
     // Three nice patterns
     // createCamoRect(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
@@ -75,10 +78,10 @@ class CamoNoise {
     // createCamoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
 
     // // Four not as interesting patterns
-    createCamoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
-    createCamoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
-    createCamoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
-    createCamoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
+    if (bNoiseOne)  createCamoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+    if (bNoiseTwo)  createCamoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+    if (bNoiseThree)createCamoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+    if (bNoiseFour) createCamoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
 
     // lines
     // createCamoLine(camo, 0, 0, 2, 0.005, 0.006, 0.1, 0, 255);
@@ -93,7 +96,6 @@ class CamoNoise {
   }
 
   void display(){
-    showFPS();
 
     // show camo
     push();
@@ -116,7 +118,7 @@ class CamoNoise {
 
         float off = offset1 * (float)simplex.eval(offset2 * x, offset2 * y);
 
-        if (smooth){
+        if (soft){
           float ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
           col = map(ns, -1, 1, 0, 255);
         }
