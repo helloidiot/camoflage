@@ -13,23 +13,24 @@ boolean bSeed = true;
 int camoOneOff1, camoTwoOff1, camoThreeOff1, camoFourOff1;
 float camoOneOff2, camoTwoOff2, camoThreeOff2, camoFourOff2;
 
+boolean bRect = true;
+
 // anim controls
 int numFrames;
 
 int camoBG = 0;
+int alpha = 255;
 
-boolean soft, stark, gradient;
-int low = 0;
-int lowmid = 80;
-int highmid = 160;
-int high = 255;
+boolean smooth, stark, gradient;
+int r1, r2, r3, r4;
+int low, lowmid, highmid, high; // TODO control these through GUI
 // pallette
 // 253	67	84
 
 PGraphics camo;
 PGraphics[] camoBuffers;
-boolean indBuffer;
-int numBuffers = 4;
+boolean bIndBuffer = true;
+int numBuffers = 5;
 
 int camoW = 720;
 int camoH = 720;
@@ -43,14 +44,12 @@ class CamoNoise {
     simplex = new OpenSimplexNoise();
 
     camo = createGraphics(camoH, camoH); // one buffer for mixed
-    // camoBuffer1 = createGraphics(camoW, camoH); // one buffer for each
-    // camoBuffer2 = createGraphics(camoW, camoH);
-    // camoBuffer3 = createGraphics(camoW, camoH);
-    // camoBuffer4 = createGraphics(camoW, camoH);
 
-    // for (int i = 0; i < numBuffers; i++){
-    //   camoBuffers[i] = createGraphics(camoW, camoH);
-    // }
+    camoBuffers = new PGraphics[numBuffers];
+
+    for (int i = 0; i < numBuffers; i++){
+      camoBuffers[i] = createGraphics(camoW, camoH);
+    }
 
   }
 
@@ -58,11 +57,8 @@ class CamoNoise {
 
     float t = 1.0 * iterator / numFrames;
 
-    camo.beginDraw();
-    camo.clear(); // empty the buffer
-
     // Four not as interesting patterns
-    if (indBuffer){
+    if (bIndBuffer){
 
       for (int i = 0; i < numBuffers; i++){
         camoBuffers[i].beginDraw();
@@ -72,35 +68,44 @@ class CamoNoise {
         if (i == 1 && bNoiseOne){
           x = 0;
           y = 0;
-          camoRect(camoBuffers[i], x, y, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
+          camoRect(camoBuffers[i], x, y, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, low, high);
         }
         else if (i == 2 && bNoiseTwo){
           x = spacing/2;
           y = 0;
-          camoRect(camoBuffers[i], x, y, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
+          camoRect(camoBuffers[i], x, y, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, low, high);
         }
-        else if (i == 3){
+        else if (i == 3 && bNoiseThree){
           x = 0;
           y = spacing/2;
-          camoRect(camoBuffers[i], x, y, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
+          camoRect(camoBuffers[i], x, y, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, low, high);
         }
-        else if (i == 4){
-          x = 0;
+        else if (i == 4 && bNoiseFour){
+          x = spacing/2;
           y = spacing/2;
-          camoRect(camoBuffers[i], x, y, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
+          camoRect(camoBuffers[i], x, y, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, low, high);
         }
 
         camoBuffers[i].endDraw();
       }
     }
-    else  if (!indBuffer){
-      if (bNoiseOne)  camoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, 0, 255);
-      if (bNoiseTwo)  camoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, 0, 255);
-      if (bNoiseThree)camoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, 0, 255);
-      if (bNoiseFour) camoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, 0, 255);
-    }
 
-    camo.endDraw();
+    else  if (!bIndBuffer){
+      camo.beginDraw();
+      camo.clear(); // empty the buffer
+
+      // if (bNoiseOne)  camoRect(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius, low, high);
+      // if (bNoiseTwo)  camoRect(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius, low, high);
+      // if (bNoiseThree)camoRect(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius, low, high);
+      // if (bNoiseFour) camoRect(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius, low, high);
+
+      if (bNoiseOne)  camoLine(camo, 0, 0, camoOneOff1, camoOneOff2/10, camoOneScale/10, camoOneRadius);
+      if (bNoiseTwo)  camoLine(camo, spacing/2, 0, camoTwoOff1, camoTwoOff2/10, camoTwoScale/10, camoTwoRadius);
+      if (bNoiseThree)camoLine(camo, 0, spacing/2, camoThreeOff1, camoThreeOff2/10, camoThreeScale/10, camoThreeRadius);
+      if (bNoiseFour) camoLine(camo, spacing/2, spacing/2, camoFourOff1, camoFourOff2/10, camoFourScale/10, camoFourRadius);
+
+      camo.endDraw();
+    }
 
     iterator++;
 
@@ -108,14 +113,31 @@ class CamoNoise {
 
   void display(){
 
-    // show camo
-    push();
-    translate(viewport_w-camoW, 0);
-    // draw bg
-    fill(camoBG);
-    rect(0,0, camoW, camoH);
-    image(camo, 0, 0);
-    pop();
+    // draw independant buffers, on on top of each other
+    if (bIndBuffer){
+
+      push();
+      // draw bg
+      translate(viewport_w-camoW, 0);
+      fill(camoBG);
+      rect(0,0, camoW, camoH); // draw buffer bg
+
+      for (int i = 0; i < numBuffers; i++){
+        // show camo
+        image(camoBuffers[i], 0, 0);
+      }
+      pop();
+    }
+
+    else {
+      // show camo
+      push();
+      translate(viewport_w-camoW, 0);
+      fill(camoBG);
+      rect(0,0, camoW, camoH); // draw bg
+      image(camo, 0, 0);
+      pop();
+    }
   }
 
   void camoRect(PGraphics pg, int originX, int originY, float offset1, float offset2, float s, float r, int col1, int col2){
@@ -125,8 +147,8 @@ class CamoNoise {
 
     float col = 0.0;
 
-    for (int x = originX, i = 0; x < viewport_w; x += spacing){
-      for (int y = originY; y < viewport_h; y += spacing, i++){
+    for (int x = originX, i = 0; x < camoW; x += spacing){
+      for (int y = originY; y < camoH; y += spacing, i++){
 
         float off = offset1 * (float)simplex.eval(offset2 * x, offset2 * y);
         float ns = 0.0;
@@ -135,46 +157,106 @@ class CamoNoise {
         float p = 1.0 * i / i;
 
         if (bSeed){
+          // map(pNoiseSeed(x, y, offset(p)-t, r, s), -1, 1, 0, 255);
           ns = (float)simplex.eval(s * x, s * y, seed + r * sin(TWO_PI * easeT + off), r * cos(TWO_PI * easeT + off));
         }
         else{
           ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
-
         }
 
 
-        if (soft){
+        if (smooth){
           // col = map(ns, -1, 1, 0, 255);
-          map(pNoise(offset(p)-t, r), -1, 1, 0, 255);
+          // map(pNoise(offset(p)-t, r), -1, 1, 0, 255);
           col = map(ns, -1, 1, 0, 255);
         }
         else if (stark){
-          boolean b = ns > 0;
+          int threshold = 0;
+          boolean b = ns > threshold;
           col = b?col1:col2;
+          alpha = b?col1:col2;
         }
         else if (gradient){
           float c = map(ns, -1, 1, 0, 255);
 
-
           // 4 colours
-          if (c <= 85){
+          if (c <= r1){
             col = low;
           }
-          else if (c > 85 && c <= 128){
+          else if (c > r1 && c <= r2){
             col = lowmid;
           }
-          else if (c > 128 && c <= 192){
+          else if (c > r2 && c <= r3){
             col = highmid;
           }
-          else if (c > 192 && c <= 255){
+          else if (c > r3 && c <= r4){
             col = high;
           }
         }
 
         // set style and draw
-        pg.stroke(col);
-        pg.fill(col);
-        pg.rect(x, y, spacing/2, spacing/2);
+        pg.stroke(col, alpha);
+        pg.fill(col, alpha);
+        if (bRect)  pg.rect(x, y, spacing/2, spacing/2);
+        if (!bRect) pg.point(x+(spacing/2), y+(spacing/2));
+      }
+    }
+
+    pg.endDraw();
+    pop();
+  }
+
+  void camoLine(PGraphics pg, int originX, int originY, float offset1, float offset2, float s, float r){
+
+    push();
+    pg.beginDraw();
+
+    float col = 0.0;
+
+    for (int x = originX, i = 0; x < camoW; x += spacing){
+      for (int y = originY; y < camoH; y += spacing, i++){
+
+        float off = offset1 * (float)simplex.eval(offset2 * x, offset2 * y);
+        float ns = 0.0;
+
+        float easeT = ease(t, 1.0);
+        float p = 1.0 * i / i;
+
+        if (bSeed){
+          // map(pNoiseSeed(x, y, offset(p)-t, r, s), -1, 1, 0, 255);
+          ns = (float)simplex.eval(s * x, s * y, seed + r * sin(TWO_PI * easeT + off), r * cos(TWO_PI * easeT + off));
+        }
+        else{
+          ns = (float)simplex.eval(s * x, s * y, r * sin(TWO_PI * t + off), r * cos(TWO_PI * t + off));
+        }
+
+        float c = map(ns, -1, 1, 0, 255);
+        // int newS = (int)map(ns, -1, 1, 8, 32);
+        // spacing = newS;
+
+        // 4 colours
+        if (c <= r1){
+          col = low;
+        }
+        else if (c > r1 && c <= r2){
+          col = lowmid;
+        }
+        else if (c > r2 && c <= r3){
+          col = highmid;
+        }
+        else if (c > r3 && c <= r4){
+          col = high;
+        }
+
+        // set style and draw
+        pg.stroke(col, alpha);
+        pg.fill(col, alpha);
+        if (ns < 0) {
+          pg.line(x, y, x + spacing/2, y + spacing/2);
+        }
+        else {
+          pg.line(x, y + spacing/2, x + spacing/2, y);
+        }
       }
     }
 
@@ -183,8 +265,17 @@ class CamoNoise {
   }
 
   // // 1-periodic function from a circle in noise
-  float pNoise(float q, float r){
-    return (float)simplex.eval(seed + r * cos(TWO_PI * q), r * sin(TWO_PI * q));
+  float pNoise(int x, int y, float q, float r, float s){
+    return (float)simplex.eval(s * x, s * y, r * cos(TWO_PI * q), r * sin(TWO_PI * q));
+  }
+
+  float pNoiseSeed(int x, int y, float q, float r, float s){
+    return (float)simplex.eval(s * x, s * y, seed + r * cos(TWO_PI * q), r * sin(TWO_PI * q));
+  }
+
+  float pNoiseEase(int x, int y, float q, float r, float s, float amt){
+    float et = ease(q, amt);
+    return (float)simplex.eval(s * x, s * y, seed + r * cos(TWO_PI * q), r * sin(TWO_PI * q));
   }
 
   float offset(float p){

@@ -56,19 +56,32 @@ void keyPressed(){
     recordingStart = frame;
     recording = true;
   }
+  if (key == 'i' || key == 'I'){
+    bIndBuffer = !bIndBuffer;
+    println("independent buffers: " + bIndBuffer);
+  }
   if (key == 's' || key == 'S'){
     bSeed = !bSeed;
+    println("seed: " + bSeed);
   }
   if (key == 'm' || key == 'M'){
     bMouseTime = !bMouseTime;
+    println("mouse time: " + bMouseTime);
   }
   if (key == '1'){
-    camoBG = 255;
-    println("BG white");
+
   }
   if (key == '2'){
-    camoBG = 10;
-    println("BG black");
+
+  }
+  if (key == '3'){
+
+  }
+  if (key == '4'){
+
+  }
+  if (key == 'r'){
+    bRect = !bRect;
   }
 }
 
